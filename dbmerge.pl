@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+# vim: ai si sw=4 sts=4 et fdc=4 fmr=AAA,ZZZ fdm=marker
 # this is used to merge the readerware db with the dmp3 db.
 #   should I use an array for the pseudo numbers %pn?
 #   work on a local version of the menu choice routine. easy to do
@@ -6,7 +7,6 @@
 #   path::tiny, term::readline::gnu, carp (a system upgrade, not just for
 #   this program)
 #
-# vim: ai si sw=4 sts=4 et fdc=4 fmr=AAA,ZZZ fdm=marker
 
 # preamble #AAA
 use strict;
