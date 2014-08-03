@@ -25,7 +25,6 @@ my %rdrw;
 my $total;
 my $count;
 
-#my %match = ( artist => qr/\W/, album => qr/[^[:alpha:]]/ );
 my %opts = (
            min => '0001',
            max => '0100',
@@ -57,7 +56,6 @@ my @opts = (
     'test|t=s@' => sub { push @{$opts{test}}, lc $_[1] },
 );
 GetOptions(\%opts, @opts) or die 'illegal options, ';
-#print STDERR Data::Dumper->Dump([\%opts],[qw/opts/]);
 die 'missing rdrw file' unless exists $opts{rdrw} and -s $opts{rdrw};
 die 'missing dmp3 file' unless exists $opts{dmp3} and -s $opts{dmp3};
 if ( ! defined $opts{output} ) {
@@ -70,8 +68,6 @@ my $tab = "\t";
 
 my $RESULTS  = path($opts{output})->openw();
 my $PROBLEMS = path($opts{problems})->openw();
-#open(my $RESULTS, '>', $opts{output});
-#open(my $PROBLEMS, '>', 'problems');
 
 #ZZZ
 
@@ -129,9 +125,7 @@ my %match = (
         my $return = 0;
         my @input = ();
 
-#  print STDERR Data::Dumper->Dump([\@_],[qw/called/]);
         push @input, map{[split /\s+/]} @_;
-#   print STDERR Data::Dumper->Dump([\@input],[qw/input/]);
         my ($short, $long) = (@{$input[0]} <= @{$input[1]}) ? (@input) : reverse @input;
         my $long_str = join(' ', @$long);
         my $short_str = join(' ', @$short);
@@ -157,7 +151,6 @@ my %match = (
 #ZZZ
 
 # load readerware db #AAA
-#open( my $RDRW, '<', $opts{rdrw});
 my $RDRW = path($opts{rdrw})->openr();
 
 while (my $line = (<$RDRW>)) {
@@ -180,7 +173,6 @@ while (my $line = (<$RDRW>)) {
 
 # read / write verify #AAA
 if ( -s $opts{verify} ) {
-#    open(my $IF, '<', $opts{verify}) or die "can't open $opts{verify} for read\n";
     my $IF = path($opts{verify})->openr();
     while (<$IF>) {
         chomp;
@@ -190,14 +182,10 @@ if ( -s $opts{verify} ) {
     close $IF;
     @{$verified{$_}} = sort @{$verified{$_}} foreach keys %verified;
 }
-#print STDERR Data::Dumper->Dump([\%verified],[qw/verified/]);
-#die 'check';
-#open(my $VERIFIED, '>>', $opts{verify}) or die "can't open $opts{verify} for write\n";
 my $VERIFIED = path($opts{verify})->openw();
 #ZZZ
 
 # load dmp3 #AAA
-#open(my $DMP3, '<', $opts{dmp3});
 my $DMP3 = path($opts{dmp3})->openr();
 my %pn; #pseudo numbers to go with albums.  need unique items.
 my $next = 1;
@@ -205,29 +193,15 @@ while (my $line = (<$DMP3>)) {
     chomp $line;
     my ( $song, $artist, $album, $track, $time, $genre, $date ) = split /\t/, $line;
     my $n = (grep {$pn{$_} eq $album} keys %pn)[0];
-#   say STDERR "n is $n";
     if ( ! defined $n ) {
         $n = $next++;
         $pn{$n} = $album;
     }
-#    my ($n,$val);
-#    while (($n,$val) = each @pn) {
-#        last if $val eq $album; 
-#    }
-#    if ( ! defined $n ) {
-#        $n = @pn;
-#        push @pn, $album;
-#    }
     $track =~ s/ of.*//;
     $track = substr('00'.$track, -2);
-    #@{$dmp3{$album}{$track}}{qw/artist song time genre date/} = ($artist, $song, $time, $genre, $date);
     @{$dmp3{$n}{$track}}{qw/artist song time genre date/} = ($artist, $song, $time, $genre, $date);
 }
 $total = keys %dmp3;
-#print STDERR Data::Dumper->Dump([\%dmp3],[qw/dmp3/]);
-#print STDERR Data::Dumper->Dump([\%pn],[qw/pn/]);
-#print STDERR Data::Dumper->Dump([\@{$verified{'0278'}}],[qw/ver/]);
-#die' check';
 #ZZZ
 
 # display_dmp3 #AAA
@@ -328,38 +302,22 @@ foreach my $n ( grep { ! exists $dmp3{$_}{'01'}{diskid}} keys %dmp3 ) {
 }
 #ZZZ
 
-#while ( my ($disk, $album) = each %update_list) {
-#    map {$dmp3{$album}{$_}{diskid} = $disk} keys %{$dmp3{$album}};
-#}
 say $PROBLEMS $_ foreach @problems;
-#say $VERIFIED join($tab, $_, $verified{$_}) foreach keys %verified;
 my %results;
 my %ALBUM;
 foreach my $n ( grep {defined $dmp3{$_}{'01'}{diskid}} keys %dmp3) {
-#   say STDERR '1111111111111111111';
     my $album = $pn{$n}; #say STDERR 'found album: '.$album;
     my $diskid = $dmp3{$n}{'01'}{diskid}; #say STDERR 'found diskid: '.$diskid;
     my $disknum = undef;
     while (my($ndx,$val) = each @{$verified{$diskid}}){
         next unless $album eq $val;
         die 'something is wrong, duplicate disknum?' if defined $disknum;
-#       say STDERR $ndx.' : '.$val;
         $disknum = $ndx;
-    }
-#   say STDERR 'found disknum: '.$disknum;
-#   say STDERR '2222222222222222222';
-    if (defined $disknum) {
-#       say STDERR $album;
-#       say STDERR $diskid;
-#       say STDERR $disknum;
-#       print STDERR Data::Dumper->Dump([\@{$verified{$diskid}}],[qw/ver/]);
     }
     if ( defined $disknum ) {
         $disknum = substr '00'.(1+$disknum), -2;
         $ALBUM{$diskid.$disknum} = $album;
-        #@{$results{$diskid}{$disknum}{$_}}{qw/song time artist genre date/} = @{$dmp3{$n}{$_}}{qw/song time artist genre date/} foreach sort keys %{$dmp3{$n}};
         @{$results{$diskid.$disknum.$_}}{qw/song time artist genre date/} = @{$dmp3{$n}{$_}}{qw/song time artist genre date/} foreach sort keys %{$dmp3{$n}};
-#        say $RESULTS join($tab, $album, $diskid, $disknum, $_, @{$dmp3{$n}{$_}}{qw/time artist song genre date/}) foreach sort keys %{$dmp3{$n}};
     } else {
         say $PROBLEMS "missing $album";
     }
@@ -367,14 +325,6 @@ foreach my $n ( grep {defined $dmp3{$_}{'01'}{diskid}} keys %dmp3) {
 
 #ZZZ
 
-#foreach my $diskid (sort keys %results) {
-#    foreach my $disknum (sort keys %{$results{$diskid}}) {
-#        my $ALBUM = $ALBUM{$diskid.$disknum};
-#        foreach my $track (sort keys %{$results{$diskid}{$disknum}}) {
-#            say $RESULTS join($tab,$diskid,$disknum,$track,$ALBUM,@{$results{$diskid}{$disknum}{$track}}{qw/song time artist genre date/});
-#        }
-#    }
-#}
 foreach my $key (sort keys %results) {
     (my $diskid = $key) =~ s/\d\d$//;
     my $ALBUM = $ALBUM{$diskid};
